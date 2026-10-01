@@ -1,54 +1,85 @@
-import React, { useMemo, useState } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import { createRoot } from "react-dom/client";
 import { routes } from "./router/routes";
-import { mockData } from "./mocks/seedData";
-import { StatusBadge } from "./components/common/StatusBadge";
-import { StatCard } from "./components/common/StatCard";
+import { useDataStore } from "./stores/DataStore";
+import { LearnPage } from "./pages/LearnPage";
+import { PracticePage } from "./pages/PracticePage";
+import { MistakesPage } from "./pages/MistakesPage";
+import { ProgressPage } from "./pages/ProgressPage";
 import "./styles.css";
 
-function Page({ name }: { name: string }) {
-  const entities = Object.entries(mockData);
-  const total = useMemo(() => entities.reduce((sum, [, rows]) => sum + rows.length, 0), [entities]);
-  return <main className="page">
-    <section className="page-head">
-      <div>
-        <p className="eyebrow">braille-trainer</p>
-        <h1>{name}</h1>
-      </div>
-      <StatusBadge value="LOCAL_DATA" />
-    </section>
-    <section className="metrics">
-      <StatCard label="核心模型" value={entities.length} />
-      <StatCard label="本地记录" value={total} />
-      <StatCard label="共享枚举" value={3} />
-    </section>
-    <section className="workbench">
-      <div className="panel wide">
-        <h2>业务数据</h2>
-        <div className="table">
-          {entities.map(([key, rows]) => <article key={key} className="row">
-            <strong>{key}</strong><span>{rows.length} 条</span><StatusBadge value={Object.values(rows[0] ?? {})[1] as string ?? "READY"} />
-          </article>)}
-        </div>
-      </div>
-      <div className="panel">
-        <h2>联动检查</h2>
-        <p>页面、store、API、构造器、日志模板和枚举常量均按提示词拆分，适合评审跨文件修改能力。</p>
-      </div>
-    </section>
-  </main>;
+const PAGE_VIEWS: Record<string, ComponentType> = {
+  "/learn": LearnPage,
+  "/practice": PracticePage,
+  "/mistakes": MistakesPage,
+  "/progress": ProgressPage
+};
+
+function currentRoute(): string {
+  const hash = window.location.hash.replace(/^#/, "");
+  return routes.some((route) => route.route === hash) ? hash : routes[0].route;
 }
 
 function App() {
-  const [active, setActive] = useState<string>(routes[0]?.route ?? "/dashboard");
-  const current = routes.find((route) => route.route === active) ?? routes[0];
-  return <div className="shell">
-    <aside>
-      <div className="brand">盲文点字学习训练器</div>
-      <nav>{routes.map((route) => <button key={route.route} className={active === route.route ? "active" : ""} onClick={() => setActive(route.route)}>{route.name}</button>)}</nav>
-    </aside>
-    <Page name={current?.name ?? "工作台"} />
-  </div>;
+  const bootstrap = useDataStore((state) => state.bootstrap);
+  const bootstrapped = useDataStore((state) => state.bootstrapped);
+  const loading = useDataStore((state) => state.loading);
+  const bootError = useDataStore((state) => state.bootError);
+  const [route, setRoute] = useState<string>(currentRoute());
+
+  useEffect(() => {
+    void bootstrap();
+    const onHashChange = () => setRoute(currentRoute());
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, [bootstrap]);
+
+  const navigate = (next: string) => {
+    window.location.hash = next;
+    setRoute(next);
+  };
+
+  const View = PAGE_VIEWS[route] ?? LearnPage;
+
+  return (
+    <div className="shell">
+      <aside>
+        <div className="brand">
+          盲文点字
+          <small>学习训练器 · 卡片版本化</small>
+        </div>
+        <nav>
+          {routes.map((item) => (
+            <button
+              key={item.route}
+              className={route === item.route ? "active" : ""}
+              onClick={() => navigate(item.route)}
+            >
+              {item.name}
+            </button>
+          ))}
+        </nav>
+        <p className="shell-foot">数据保存在浏览器 IndexedDB</p>
+      </aside>
+      {loading && !bootstrapped ? (
+        <main className="page">
+          <div className="boot-loading">正在装载本地数据并兼容回填旧版本记录…</div>
+        </main>
+      ) : (
+        <div className="page-wrapper">
+          {bootError && (
+            <div className="notice danger boot-error">
+              <span>{bootError}</span>
+              <button className="link" onClick={() => window.location.reload()}>
+                重新加载
+              </button>
+            </div>
+          )}
+          <View />
+        </div>
+      )}
+    </div>
+  );
 }
 
 createRoot(document.getElementById("root")!).render(<App />);

@@ -1,8 +1,13 @@
 import { create } from "zustand";
 import { listLesson } from "../api/Lesson";
+import { useDataStore } from "./DataStore";
 import type { Lesson } from "../types/Lesson";
 
-type State = { rows: Lesson[]; loading: boolean; load: () => Promise<void> };
+type State = {
+  rows: Lesson[];
+  loading: boolean;
+  load: () => Promise<void>;
+};
 
 export const useLessonStore = create<State>((set) => ({
   rows: [],
@@ -12,3 +17,7 @@ export const useLessonStore = create<State>((set) => ({
     set({ rows: await listLesson(), loading: false });
   }
 }));
+
+useDataStore.subscribe((state) =>
+  useLessonStore.setState({ rows: state.lessons, loading: state.loading })
+);

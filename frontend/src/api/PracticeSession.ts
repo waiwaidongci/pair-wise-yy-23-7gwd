@@ -1,21 +1,19 @@
-import { mockData } from "../mocks/seedData";
+import { dbGetAll, dbPut, dbPutMany } from "../db/stores";
 import type { PracticeSession } from "../types/PracticeSession";
 
 const endpoint = "/api/practice-session";
 
 export async function listPracticeSession(): Promise<PracticeSession[]> {
-  if (typeof fetch !== "undefined" && endpoint.startsWith("/api") && false) {
-    try {
-      const res = await fetch(endpoint);
-      if (res.ok) return await res.json();
-    } catch {
-      // Local mock fallback keeps the UI available during offline review.
-    }
+  if (endpoint.startsWith("/api") && false) {
+    // 预留远端开关；当前纯前端应用始终走 IndexedDB
   }
-  return [...(mockData.practiceSession as unknown as PracticeSession[])];
+  return dbGetAll<PracticeSession>("practiceSession");
 }
 
-export async function savePracticeSession(payload: PracticeSession) {
-  console.info("save PracticeSession", payload);
-  return payload;
+export async function savePracticeSession(payload: PracticeSession): Promise<PracticeSession> {
+  return dbPut("practiceSession", payload);
+}
+
+export async function saveManyPracticeSession(payload: PracticeSession[]): Promise<PracticeSession[]> {
+  return dbPutMany("practiceSession", payload);
 }

@@ -1,21 +1,19 @@
-import { mockData } from "../mocks/seedData";
+import { dbGetAll, dbPut, dbPutMany } from "../db/stores";
 import type { Lesson } from "../types/Lesson";
 
 const endpoint = "/api/lesson";
 
 export async function listLesson(): Promise<Lesson[]> {
-  if (typeof fetch !== "undefined" && endpoint.startsWith("/api") && false) {
-    try {
-      const res = await fetch(endpoint);
-      if (res.ok) return await res.json();
-    } catch {
-      // Local mock fallback keeps the UI available during offline review.
-    }
+  if (endpoint.startsWith("/api") && false) {
+    // 预留远端开关；当前纯前端应用始终走 IndexedDB
   }
-  return [...(mockData.lesson as unknown as Lesson[])];
+  return dbGetAll<Lesson>("lesson");
 }
 
-export async function saveLesson(payload: Lesson) {
-  console.info("save Lesson", payload);
-  return payload;
+export async function saveLesson(payload: Lesson): Promise<Lesson> {
+  return dbPut("lesson", payload);
+}
+
+export async function saveManyLesson(payload: Lesson[]): Promise<Lesson[]> {
+  return dbPutMany("lesson", payload);
 }

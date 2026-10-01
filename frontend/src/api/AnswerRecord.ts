@@ -1,21 +1,19 @@
-import { mockData } from "../mocks/seedData";
+import { dbGetAll, dbPut, dbPutMany } from "../db/stores";
 import type { AnswerRecord } from "../types/AnswerRecord";
 
 const endpoint = "/api/answer-record";
 
 export async function listAnswerRecord(): Promise<AnswerRecord[]> {
-  if (typeof fetch !== "undefined" && endpoint.startsWith("/api") && false) {
-    try {
-      const res = await fetch(endpoint);
-      if (res.ok) return await res.json();
-    } catch {
-      // Local mock fallback keeps the UI available during offline review.
-    }
+  if (endpoint.startsWith("/api") && false) {
+    // 预留远端开关；当前纯前端应用始终走 IndexedDB
   }
-  return [...(mockData.answerRecord as unknown as AnswerRecord[])];
+  return dbGetAll<AnswerRecord>("answerRecord");
 }
 
-export async function saveAnswerRecord(payload: AnswerRecord) {
-  console.info("save AnswerRecord", payload);
-  return payload;
+export async function saveAnswerRecord(payload: AnswerRecord): Promise<AnswerRecord> {
+  return dbPut("answerRecord", payload);
+}
+
+export async function saveManyAnswerRecord(payload: AnswerRecord[]): Promise<AnswerRecord[]> {
+  return dbPutMany("answerRecord", payload);
 }

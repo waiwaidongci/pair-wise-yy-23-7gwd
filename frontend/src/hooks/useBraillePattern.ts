@@ -1,8 +1,18 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { parsePattern } from "../components/common/BrailleCell";
 
-export function useBraillePattern<T>(rows: T[] = []) {
-  const [page, setPage] = useState(1);
-  const pageSize = 8;
-  const pageRows = useMemo(() => rows.slice((page - 1) * pageSize, page * pageSize), [rows, page]);
-  return { page, setPage, pageSize, pageRows, total: rows.length };
+/** 把 "1,2,5" 形式的点阵解析成渲染与判分都能用的结构 */
+export function useBraillePattern(pattern: string) {
+  return useMemo(() => {
+    const dots = parsePattern(pattern);
+    return {
+      dots,
+      list: [...dots].sort((a, b) => a - b),
+      isEmpty: dots.size === 0,
+      matches: (other: string) => {
+        const target = parsePattern(other);
+        return target.size === dots.size && [...dots].every((dot) => target.has(dot));
+      }
+    };
+  }, [pattern]);
 }

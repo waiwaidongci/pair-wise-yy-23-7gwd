@@ -4,10 +4,12 @@ export const createDefaultAnswerRecord = (overrides: Partial<AnswerRecord> = {})
   id: 1 as never,
   session_id: 1 as never,
   symbol_id: 1 as never,
-  user_answer: "user answer 1" as never,
-  correct: "correct 1" as never,
-  latency_ms: "latency ms 1" as never,
-  mistake_reason: "mistake reason 1" as never,
+  user_answer: "" as never,
+  correct: false,
+  latency_ms: 0,
+  mistake_reason: "" as never,
+  card_snapshot: null,
+  superseded: false,
   ...overrides
 });
 
